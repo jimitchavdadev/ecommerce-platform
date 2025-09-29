@@ -5,7 +5,7 @@ node_modules
 .pnp
 .pnp.js
 
-# Local env files
+# Local env files (IMPORTANT: Do not commit secrets)
 .env
 .env.local
 .env.development.local
@@ -15,24 +15,24 @@ node_modules
 # Testing
 coverage
 
-# Turbo
+# Build & Cache
 .turbo
-
-# Vercel
 .vercel
-
-# Build Outputs
 .next/
 out/
 build
 dist
 
-
-# Debug
+# Debug Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Misc
+# Misc / OS Specific
 .DS_Store
 *.pem
+Thumbs.db
+
+# IDE / Editor Settings
+.vscode/
+.idea/
