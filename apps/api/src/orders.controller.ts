@@ -3,7 +3,9 @@ import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './orders/dto/create-order.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from './common/decorators/get-user.decorator';
-import type { User } from '@prisma/client';
+import { User, Role } from '@prisma/client';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Controller('orders')
 @UseGuards(AuthGuard('jwt'))
@@ -12,11 +14,19 @@ export class OrdersController {
 
   @Post()
   create(@Body() createOrderDto: CreateOrderDto, @GetUser() user: User) {
+    // This now just creates a PENDING order
     return this.ordersService.create(createOrderDto, user);
   }
 
   @Get('my-orders')
   findMyOrders(@GetUser() user: User) {
     return this.ordersService.findMyOrders(user.id);
+  }
+
+  @Get('all')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  findAllOrders() {
+    return this.ordersService.findAllOrders();
   }
 }

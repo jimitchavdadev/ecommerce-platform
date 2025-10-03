@@ -29,6 +29,9 @@ export default function Navbar() {
           <Link href="/account/orders" className="hover:text-gray-300">
             My Orders
           </Link>
+           <Link href="/admin/products" className="hover:text-gray-300">
+            Admin
+          </Link>
           <Link href="/cart" className="relative hover:text-gray-300">
             Cart
             {totalItems > 0 && (
