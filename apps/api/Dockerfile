@@ -1,50 +1,33 @@
-# ---- Base Stage: Install dependencies ----
+# ---- Base Stage: Setup Node and PNPM ----
 FROM node:20-alpine AS base
 WORKDIR /usr/src/app
-# Use corepack to enable pnpm
 RUN corepack enable
+ENV CI=true
 
-# ---- Dependencies Stage: Install production dependencies ----
-FROM base AS deps
-WORKDIR /usr/src/app
-COPY pnpm-lock.yaml ./
-COPY package.json ./
-COPY apps/api/package.json ./apps/api/
-COPY packages/ packages/
-RUN pnpm install --prod --frozen-lockfile
-
-# ---- Build Stage: Build the application ----
+# ---- Build Stage: Install all deps, build, and prune for production ----
 FROM base AS builder
 WORKDIR /usr/src/app
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm run build --filter=api
+RUN pnpm --filter api exec prisma generate
+# FIX: Corrected pnpm filter syntax
+RUN pnpm --filter api run build
+RUN pnpm prune --prod
 
-
-# ---- Production Stage: Create the final, small image ----
-FROM node:20-alpine AS runner
+# ---- Production Stage: Create the final, minimal image ----
+FROM base AS runner
 WORKDIR /usr/src/app
 
-# Copy production dependencies from the 'deps' stage
-COPY --from=deps /usr/src/app/node_modules ./node_modules
-
-# This is the line that was causing the error and has been REMOVED:
-# COPY --from=deps /usr/src/app/apps/api/node_modules ./apps/api/node_modules
-
-# Copy the built application from the 'builder' stage
+# Copy only the necessary production files from the builder stage
+COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/apps/api/dist ./apps/api/dist
+COPY --from=builder /usr/src/app/apps/api/prisma ./apps/api/prisma
+COPY --from=builder /usr/src/app/apps/api/package.json ./apps/api/package.json
 
-# Copy Prisma schema and client generation assets
-COPY apps/api/prisma ./apps/api/prisma
-
-# Change to the api directory before running commands
+# Change to the api directory to run the final commands
 WORKDIR /usr/src/app/apps/api
 
-# Generate the Prisma client
-RUN pnpm exec prisma generate
-
-# The port your app will listen on within the container
 EXPOSE 3001
 
-# The command to run migrations and start the application
+# The start command now runs migrations and starts the app
 CMD ["pnpm", "start:prod"]

@@ -1,6 +1,10 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as Razorpay from 'razorpay';
+import Razorpay = require('razorpay'); // FIX: Changed import style for CommonJS compatibility
 import * as crypto from 'crypto';
 import { OrdersService } from 'src/orders.service';
 
@@ -10,17 +14,21 @@ export class PaymentsService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly ordersService: OrdersService, // Inject OrdersService
+    private readonly ordersService: OrdersService,
   ) {
-    this.razorpay = new Razorpay({
-      key_id: this.configService.get<string>('RAZORPAY_KEY_ID'),
-      key_secret: this.configService.get<string>('RAZORPAY_KEY_SECRET'),
-    });
+    const key_id = this.configService.get<string>('RAZORPAY_KEY_ID');
+    const key_secret = this.configService.get<string>('RAZORPAY_KEY_SECRET');
+
+    if (!key_id || !key_secret) {
+      throw new InternalServerErrorException('Razorpay keys are not configured.');
+    }
+
+    this.razorpay = new Razorpay({ key_id, key_secret });
   }
 
   async createRazorpayOrder(amount: number, receiptId: string) {
     const options = {
-      amount: amount * 100, // Amount in the smallest currency unit (e.g., paise for INR)
+      amount: Math.round(amount * 100), // Amount in the smallest currency unit (e.g., paise)
       currency: 'INR',
       receipt: receiptId,
     };
@@ -40,8 +48,15 @@ export class PaymentsService {
     internalOrderId: string,
   ) {
     const body = `${razorpayOrderId}|${razorpayPaymentId}`;
+
+    // FIX: Ensure the secret key exists before using it
+    const secret = this.configService.get<string>('RAZORPAY_KEY_SECRET');
+    if (!secret) {
+      throw new InternalServerErrorException('Razorpay secret key is not configured.');
+    }
+
     const expectedSignature = crypto
-      .createHmac('sha256', this.configService.get<string>('RAZORPAY_KEY_SECRET'))
+      .createHmac('sha256', secret)
       .update(body.toString())
       .digest('hex');
 
