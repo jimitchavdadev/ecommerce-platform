@@ -3,19 +3,7 @@
 import { useCartStore } from '@/store/cartStore';
 import { useState } from 'react';
 import api from '@/lib/api';
-
-const getAuthToken = async () => {
-  try {
-    const res = await api.post('/auth/login', {
-      email: 'user@test.com',
-      password: 'password123',
-    });
-    return res.data.access_token;
-  } catch (error) {
-    console.error('Failed to log in', error);
-    return null;
-  }
-};
+import { getAuthToken } from '@/lib/auth';
 
 export default function CheckoutPage() {
   const { items, clearCart } = useCartStore();
@@ -25,7 +13,7 @@ export default function CheckoutPage() {
 
   const totalPrice = items.reduce(
     (total, item) => total + item.product.price * item.quantity,
-    0
+    0,
   );
 
   const handlePlaceOrder = async () => {
@@ -112,7 +100,7 @@ export default function CheckoutPage() {
               />
               <button
                 onClick={handlePlaceOrder}
-                disabled={isLoading}
+                disabled={isLoading || items.length === 0}
                 className="w-full bg-green-500 text-white py-3 rounded-lg text-lg hover:bg-green-600 disabled:bg-gray-400"
               >
                 {isLoading ? 'Placing Order...' : 'Place Order'}

@@ -21,7 +21,9 @@ export class OrdersService {
     const total = items.reduce((acc, item) => {
       const product = products.find((p) => p.id === item.productId);
       if (!product) {
-        throw new BadRequestException(`Product with ID ${item.productId} not found`);
+        throw new BadRequestException(
+          `Product with ID ${item.productId} not found`,
+        );
       }
       if (product.stock < item.quantity) {
         throw new BadRequestException(`Not enough stock for ${product.name}`);
@@ -61,5 +63,22 @@ export class OrdersService {
     });
 
     return order;
+  }
+
+  // New method to find orders for the authenticated user
+  async findMyOrders(userId: string) {
+    return this.prisma.order.findMany({
+      where: { userId },
+      include: {
+        items: {
+          include: {
+            product: true, // Include product details in each order item
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc', // Show most recent orders first
+      },
+    });
   }
 }

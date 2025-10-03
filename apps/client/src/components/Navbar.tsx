@@ -12,7 +12,9 @@ export default function Navbar() {
     setIsMounted(true);
   }, []);
 
-  const totalItems = isMounted ? items.reduce((total, item) => total + item.quantity, 0) : 0;
+  const totalItems = isMounted
+    ? items.reduce((total, item) => total + item.quantity, 0)
+    : 0;
 
   return (
     <nav className="bg-gray-800 text-white p-4">
@@ -20,9 +22,12 @@ export default function Navbar() {
         <Link href="/" className="text-xl font-bold">
           E-Commerce Store
         </Link>
-        <div className="flex items-center space-x-4">
-          <Link href="/products" className="hover:text-gray-300">
+        <div className="flex items-center space-x-6">
+          <Link href="/" className="hover:text-gray-300">
             Products
+          </Link>
+          <Link href="/account/orders" className="hover:text-gray-300">
+            My Orders
           </Link>
           <Link href="/cart" className="relative hover:text-gray-300">
             Cart
